@@ -1,0 +1,79 @@
+﻿@page "/login"
+@using LoginFlowInMauiBlazorApp.Models
+@using LoginFlowInMauiBlazorApp.Services
+@using System.IdentityModel.Tokens.Jwt
+@using System.Security.Claims
+@using Newtonsoft.Json
+@inject IAppService AppService;
+@inject NavigationManager NavManager;
+<h3>Login</h3>
+
+<EditForm Model="@loginModel" OnValidSubmit="Submit">
+    <DataAnnotationsValidator />
+    <div class="form-group">
+        <label>Email address</label>
+        <input type="email" @bind-value="loginModel.UserName" class="form-control" placeholder="Enter email">
+        <ValidationMessage For="@(()=> loginModel.UserName)" />
+    </div>
+    <div class="mt-2 form-group">
+        <label>Password</label>
+        <input type="password" @bind-value="loginModel.Password" class="form-control" placeholder="Password">
+        <ValidationMessage For="@(()=> loginModel.Password)" />
+    </div>
+
+    <div class="mt-2 text-end">
+        <NavLink class="nav-link" href="registration">
+            <span>Click here to create new account?</span>
+        </NavLink>
+    </div>
+
+    <div class="text-center mt-2">
+        <button class="btn btn-primary" type="submit">
+            <span class="@_spinnerClass" role="status" aria-hidden="true"></span>
+            SignIn
+        </button>
+    </div>
+</EditForm>
+
+@code {
+    LoginModel loginModel = new();
+
+    private string _spinnerClass = "";
+    private async void Submit()
+    {
+
+        _spinnerClass = "spinner-border spinner-border-sm";
+        var response = await AppService.AuthenticateUser(loginModel);
+        if (!string.IsNullOrWhiteSpace(response))
+        {
+            var handler = new JwtSecurityTokenHandler();
+            var jsontoken = handler.ReadToken(response) as JwtSecurityToken;
+
+            string userID = jsontoken.Claims.FirstOrDefault(f => f.Type == JwtRegisteredClaimNames.NameId).Value;
+            string name = jsontoken.Claims.FirstOrDefault(f => f.Type == JwtRegisteredClaimNames.Name).Value;
+            string email = loginModel.UserName;
+
+            var userBasicDetail = new UserBasicDetail
+                {
+                    Email = email,
+                    Name = name,
+                    Token = response,
+                    UserID = userID
+                };
+
+            string userBasicInfoStr = JsonConvert.SerializeObject(userBasicDetail);
+            await SecureStorage.SetAsync(nameof(Setting.UserBasicDetail), userBasicInfoStr);
+            Setting.UserBasicDetail = userBasicDetail;
+
+            NavManager.NavigateTo("/dashboard");
+        }
+        else
+        {
+            await App.Current.MainPage.DisplayAlert("Oops", "Invalid username or password", "OK");
+        }
+
+        _spinnerClass = "";
+        this.StateHasChanged();
+    }
+
+}

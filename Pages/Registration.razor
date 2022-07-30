@@ -1,0 +1,88 @@
+﻿@page "/registration"
+@using LoginFlowInMauiBlazorApp.Models
+@using LoginFlowInMauiBlazorApp.Services
+@inject IAppService AppService;
+<h3>Registration</h3>
+
+<EditForm Model="@registrationModel" OnValidSubmit="Submit">
+    <DataAnnotationsValidator />
+
+    <div class="form-group">
+        <label>First Name</label>
+        <input class="form-control" @bind-value="@registrationModel.FirstName" placeholder="Enter First Name">
+        <ValidationMessage For="@(()=> registrationModel.FirstName)" />
+    </div>
+
+    <div class="form-group">
+        <label>Last Name</label>
+        <input class="form-control" @bind-value="@registrationModel.LastName" placeholder="Enter Last Name">
+        <ValidationMessage For="@(()=> registrationModel.LastName)" />
+    </div>
+
+    <div class="mt-2 form-group">
+        <label>Gender</label>
+        <div class="d-flex flex-row">
+            <div class="col-4 d-flex justify-content-between">
+                <div class="form-check">
+                    <input @onchange="@(()=> registrationModel.Gender="male")" class="form-check-input" type="radio" name="flexRadioDefault">
+                    <label class="form-check-label" for="flexRadioDefault1">
+                        Male
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input @onchange="@(()=> registrationModel.Gender="female")" class="form-check-input" type="radio" name="flexRadioDefault">
+                    <label class="form-check-label" for="flexRadioDefault2">
+                        Female
+                    </label>
+                </div>
+            </div>
+        </div>
+        <ValidationMessage For="@(()=> registrationModel.Gender)" />
+    </div>
+
+    <div class="form-group">
+        <label>Email address</label>
+        <input type="email" @bind-value="@registrationModel.Email" class="form-control" placeholder="Enter email">
+        <ValidationMessage For="@(()=> registrationModel.Email)" />
+    </div>
+    <div class="mt-2 form-group">
+        <label>Password</label>
+        <input type="password" @bind-value="@registrationModel.Password" class="form-control" placeholder="Password">
+        <ValidationMessage For="@(()=> registrationModel.Password)" />
+
+    </div>
+
+    <div class="mt-2 text-end">
+        <NavLink class="nav-link" href="/">
+            <span>Already have account?</span>
+        </NavLink>
+    </div>
+
+    <div class="text-center mt-2">
+        <button class="btn btn-primary" type="submit">
+            <span class="@_spinnerClass" role="status" aria-hidden="true"></span>
+            Register
+        </button>
+    </div>
+</EditForm>
+@code {
+    RegistrationModel registrationModel = new();
+    private string _spinnerClass = "";
+
+    private async void Submit()
+    {
+        _spinnerClass = "spinner-border spinner-border-sm";
+        var response = await AppService.RegisterUser(registrationModel);
+        if (response.IsSuccess)
+        {
+            await App.Current.MainPage.DisplayAlert("Success", "User Registered.", "OK");
+        }
+        else
+        {
+            await App.Current.MainPage.DisplayAlert("Oops", response.ErrorMessage, "OK");
+        }
+        _spinnerClass = "";
+        this.StateHasChanged();
+    }
+
+}
