@@ -9,7 +9,9 @@ namespace LoginFlowInMauiBlazorApp.Services
 {
     public interface IAppService
     {
-        public Task<string> AuthenticateUser(LoginModel loginModel);
+        Task<bool> RefreshToken();
+        public Task<MainResponse> AuthenticateUser(LoginModel loginModel);
         Task<(bool IsSuccess, string ErrorMessage)> RegisterUser(RegistrationModel registerUser);
+        Task<List<StudentModel>> GetAllStudents();
     }
 }

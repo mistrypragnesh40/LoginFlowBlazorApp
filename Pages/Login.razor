@@ -44,10 +44,12 @@
 
         _spinnerClass = "spinner-border spinner-border-sm";
         var response = await AppService.AuthenticateUser(loginModel);
-        if (!string.IsNullOrWhiteSpace(response))
+        if (response.IsSuccess)
         {
+            var tokenResponse = JsonConvert.DeserializeObject<AuthenticateRequestAndResponse>(response.Content.ToString());
+
             var handler = new JwtSecurityTokenHandler();
-            var jsontoken = handler.ReadToken(response) as JwtSecurityToken;
+            var jsontoken = handler.ReadToken(tokenResponse.AccessToken) as JwtSecurityToken;
 
             string userID = jsontoken.Claims.FirstOrDefault(f => f.Type == JwtRegisteredClaimNames.NameId).Value;
             string name = jsontoken.Claims.FirstOrDefault(f => f.Type == JwtRegisteredClaimNames.Name).Value;
@@ -57,7 +59,8 @@
                 {
                     Email = email,
                     Name = name,
-                    Token = response,
+                    AccessToken = tokenResponse.AccessToken,
+                    RefreshToken = tokenResponse.RefreshToken,
                     UserID = userID
                 };
 

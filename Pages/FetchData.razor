@@ -1,13 +1,15 @@
 ﻿@page "/fetchdata"
 
 @using LoginFlowInMauiBlazorApp.Data
-@inject WeatherForecastService ForecastService
+@using LoginFlowInMauiBlazorApp.Models
+@using LoginFlowInMauiBlazorApp.Services
+@inject IAppService  AppService;
 
 <h1>Weather forecast</h1>
 
 <p>This component demonstrates fetching data from a service.</p>
 
-@if (forecasts == null)
+@if (Students == null)
 {
 	<p><em>Loading...</em></p>
 }
@@ -16,20 +18,18 @@ else
 	<table class="table">
 		<thead>
 			<tr>
-				<th>Date</th>
-				<th>Temp. (C)</th>
-				<th>Temp. (F)</th>
-				<th>Summary</th>
+				<th>First Name</th>
+				<th>Last Name</th>
+				<th>Email</th>
 			</tr>
 		</thead>
 		<tbody>
-			@foreach (var forecast in forecasts)
+			@foreach (var student in Students)
 			{
 				<tr>
-					<td>@forecast.Date.ToShortDateString()</td>
-					<td>@forecast.TemperatureC</td>
-					<td>@forecast.TemperatureF</td>
-					<td>@forecast.Summary</td>
+					<td>@student.FirstName</td>
+					<td>@student.LastName</td>
+					<td>@student.Email</td>
 				</tr>
 			}
 		</tbody>
@@ -37,10 +37,10 @@ else
 }
 
 @code {
-	private WeatherForecast[] forecasts;
+	private List<StudentModel> Students;
 
 	protected override async Task OnInitializedAsync()
 	{
-		forecasts = await ForecastService.GetForecastAsync(DateTime.Now);
+		Students = await AppService.GetAllStudents();
 	}
 }

@@ -1,8 +1,10 @@
 ﻿@page "/";
 @using LoginFlowInMauiBlazorApp.Models
+@using LoginFlowInMauiBlazorApp.Services
 @using Newtonsoft.Json
 @using System.IdentityModel.Tokens.Jwt
 @inject NavigationManager NavManager;
+@inject IAppService AppService
 <h3>AppLaunch</h3>
 
 Loading....
@@ -19,15 +21,25 @@ Loading....
             var userBasicDetail = JsonConvert.DeserializeObject<UserBasicDetail>(userDetailsStr);
 
             var handler = new JwtSecurityTokenHandler();
-            var jsontoken = handler.ReadToken(userBasicDetail.Token) as JwtSecurityToken;
+            var jsontoken = handler.ReadToken(userBasicDetail.AccessToken) as JwtSecurityToken;
+            Setting.UserBasicDetail = userBasicDetail;
 
             if (jsontoken.ValidTo < DateTime.UtcNow)
             {
-                NavManager.NavigateTo("/login");
+                bool isTokenRefreshed = await AppService.RefreshToken();
+
+                if (isTokenRefreshed)
+                {
+                    NavManager.NavigateTo("/dashboard");
+                }
+                else
+                {
+                    NavManager.NavigateTo("/login");
+                }
+
             }
             else
             {
-                Setting.UserBasicDetail = userBasicDetail;
                 NavManager.NavigateTo("/dashboard");
             }
         }

@@ -6,12 +6,9 @@ using System.Threading.Tasks;
 
 namespace LoginFlowInMauiBlazorApp.Models
 {
-    public class UserBasicDetail
+    public class AuthenticateRequestAndResponse
     {
-        public string Name { get; set; }
-        public string UserID { get; set; }
         public string AccessToken { get; set; }
         public string RefreshToken { get; set; }
-        public string Email { get; set; }
     }
 }
