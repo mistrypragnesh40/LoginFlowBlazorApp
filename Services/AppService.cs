@@ -10,13 +10,12 @@ namespace LoginFlowInMauiBlazorApp.Services
 {
     public class AppService : IAppService
     {
-        private string _baseUrl = "http://192.168.0.185:8188";
         public async Task<MainResponse> AuthenticateUser(LoginModel loginModel)
         {
             var returnResponse = new MainResponse();
             using (var client = new HttpClient())
             {
-                var url = $"{_baseUrl}{APIs.AuthenticateUser}";
+                var url = $"{Setting.BaseUrl}{APIs.AuthenticateUser}";
 
                 var serializedStr = JsonConvert.SerializeObject(loginModel);
 
@@ -36,7 +35,7 @@ namespace LoginFlowInMauiBlazorApp.Services
             var returnResponse = new List<StudentModel>();
             using (var client = new HttpClient())
             {
-                var url = $"{_baseUrl}{APIs.GetAllStudents}";
+                var url = $"{Setting.BaseUrl}{APIs.GetAllStudents}";
 
                 client.DefaultRequestHeaders.Add("Authorization", $"Bearer {Setting.UserBasicDetail?.AccessToken}");
                 var response = await client.GetAsync(url);
@@ -68,7 +67,7 @@ namespace LoginFlowInMauiBlazorApp.Services
             bool isTokenRefreshed = false;
             using (var client = new HttpClient())
             {
-                var url = $"{_baseUrl}{APIs.RefreshToken}";
+                var url = $"{Setting.BaseUrl}{APIs.RefreshToken}";
 
                 var serializedStr = JsonConvert.SerializeObject(new AuthenticateRequestAndResponse
                 {
@@ -76,23 +75,31 @@ namespace LoginFlowInMauiBlazorApp.Services
                     AccessToken = Setting.UserBasicDetail.AccessToken
                 });
 
-                var response = await client.PostAsync(url, new StringContent(serializedStr, Encoding.UTF8, "application/json"));
-
-                if (response.IsSuccessStatusCode)
+                try
                 {
-                    string contentStr = await response.Content.ReadAsStringAsync();
-                    var mainResponse = JsonConvert.DeserializeObject<MainResponse>(contentStr);
-                    if (mainResponse.IsSuccess)
+                    var response = await client.PostAsync(url, new StringContent(serializedStr, Encoding.UTF8, "application/json"));
+                    if (response.IsSuccessStatusCode)
                     {
-                        var tokenDetails = JsonConvert.DeserializeObject<AuthenticateRequestAndResponse>(mainResponse.Content.ToString());
-                        Setting.UserBasicDetail.AccessToken = tokenDetails.AccessToken;
-                        Setting.UserBasicDetail.RefreshToken = tokenDetails.RefreshToken;
+                        string contentStr = await response.Content.ReadAsStringAsync();
+                        var mainResponse = JsonConvert.DeserializeObject<MainResponse>(contentStr);
+                        if (mainResponse.IsSuccess)
+                        {
+                            var tokenDetails = JsonConvert.DeserializeObject<AuthenticateRequestAndResponse>(mainResponse.Content.ToString());
+                            Setting.UserBasicDetail.AccessToken = tokenDetails.AccessToken;
+                            Setting.UserBasicDetail.RefreshToken = tokenDetails.RefreshToken;
 
-                        string userDetailsStr = JsonConvert.SerializeObject(Setting.UserBasicDetail);
-                        await SecureStorage.SetAsync(nameof(Setting.UserBasicDetail), userDetailsStr);
-                        isTokenRefreshed = true;
+                            string userDetailsStr = JsonConvert.SerializeObject(Setting.UserBasicDetail);
+                            await SecureStorage.SetAsync(nameof(Setting.UserBasicDetail), userDetailsStr);
+                            isTokenRefreshed = true;
+                        }
                     }
                 }
+                catch (Exception ex)
+                {
+                    string msg = ex.Message;
+                }
+
+                
             }
             return isTokenRefreshed;
         }
@@ -103,7 +110,7 @@ namespace LoginFlowInMauiBlazorApp.Services
             bool isSuccess = false;
             using (var client = new HttpClient())
             {
-                var url = $"{_baseUrl}{APIs.RegisterUser}";
+                var url = $"{Setting.BaseUrl}{APIs.RegisterUser}";
 
                 var serializedStr = JsonConvert.SerializeObject(registerUser);
                 var response = await client.PostAsync(url, new StringContent(serializedStr, Encoding.UTF8, "application/json"));

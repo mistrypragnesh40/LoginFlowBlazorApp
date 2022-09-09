@@ -6,7 +6,9 @@
 
 <EditForm Model="@registrationModel" OnValidSubmit="Submit">
     <DataAnnotationsValidator />
-
+    <div class="mb-2">
+        <img src="@_userAvatar" @onclick="DisplayAction" height="50" width="50" class="rounded-circle" />
+    </div>
     <div class="form-group">
         <label>First Name</label>
         <input class="form-control" @bind-value="@registrationModel.FirstName" placeholder="Enter First Name">
@@ -22,7 +24,7 @@
     <div class="mt-2 form-group">
         <label>Gender</label>
         <div class="d-flex flex-row">
-            <div class="col-4 d-flex justify-content-between">
+            <div class="d-flex gap-2">
                 <div class="form-check">
                     <input @onchange="@(()=> registrationModel.Gender="male")" class="form-check-input" type="radio" name="flexRadioDefault">
                     <label class="form-check-label" for="flexRadioDefault1">
@@ -68,10 +70,17 @@
 @code {
     RegistrationModel registrationModel = new();
     private string _spinnerClass = "";
-
+    private string _userAvatar = "images/user.png";
+    private string _imageBase64Data;
     private async void Submit()
     {
         _spinnerClass = "spinner-border spinner-border-sm";
+
+        if (!string.IsNullOrWhiteSpace(_imageBase64Data))
+        {
+            registrationModel.UserAvatar = _imageBase64Data;
+        }
+
         var response = await AppService.RegisterUser(registrationModel);
         if (response.IsSuccess)
         {
@@ -83,6 +92,53 @@
         }
         _spinnerClass = "";
         this.StateHasChanged();
+    }
+
+    private async void DisplayAction()
+    {
+        string response = await App.Current.MainPage.DisplayActionSheet("Select Option", "OK", null, "Take Photo", "Add Photo");
+
+        if (response == "Take Photo")
+        {
+            if (MediaPicker.Default.IsCaptureSupported)
+            {
+                var photo = await MediaPicker.Default.CapturePhotoAsync();
+                if (photo != null)
+                {
+                    byte[] imageBytes;
+                    var newFile = Path.Combine(FileSystem.CacheDirectory, photo.FileName);
+                    var stream = await photo.OpenReadAsync();
+
+                    using (MemoryStream ms = new MemoryStream())
+                    {
+                        stream.CopyTo(ms);
+                        imageBytes = ms.ToArray();
+                    }
+                    _imageBase64Data = Convert.ToBase64String(imageBytes);
+                    _userAvatar = string.Format("data:image/png;base64,{0}", _imageBase64Data);
+                    this.StateHasChanged();
+                }
+            }
+        }
+        else if (response == "Add Photo")
+        {
+            var photo = await MediaPicker.Default.PickPhotoAsync();
+            if (photo != null)
+            {
+                byte[] imageBytes;
+                var newFile = Path.Combine(FileSystem.CacheDirectory, photo.FileName);
+                var stream = await photo.OpenReadAsync();
+
+                using (MemoryStream ms = new MemoryStream())
+                {
+                    stream.CopyTo(ms);
+                    imageBytes = ms.ToArray();
+                }
+                _imageBase64Data = Convert.ToBase64String(imageBytes);
+                _userAvatar = string.Format("data:image/png;base64,{0}", _imageBase64Data);
+                this.StateHasChanged();
+            }
+        }
     }
 
 }
